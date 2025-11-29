@@ -1,0 +1,697 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Đăng Ký Cơm Trưa - Lớp 3A1</title>
+    <style>
+        /* ===================================================================
+         * 1. STYLES CƠ BẢN VÀ BỐ CỤC
+         * =================================================================== */
+        body { 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            background-color: #f4f7f6; 
+            color: #333; 
+            margin: 0; 
+            padding: 20px; 
+        }
+        .container { 
+            max-width: 900px; 
+            margin: 0 auto; 
+            padding: 25px; 
+            background-color: #fff; 
+            border-radius: 15px; 
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15); 
+        }
+        h1 { 
+            text-align: center; 
+            color: #007bff; 
+            margin-bottom: 30px; 
+            border-bottom: 2px solid #e9ecef; 
+            padding-bottom: 10px; 
+        }
+        .summary {
+            text-align: center; 
+            margin-bottom: 25px; 
+            font-size: 1.2em; 
+            font-weight: bold;
+            padding: 15px; 
+            border-radius: 8px; 
+            background-color: #e9f7ff; 
+            color: #0056b3;
+        }
+        .student-list {
+            display: grid; 
+            grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+            gap: 15px; 
+            margin-bottom: 40px;
+        }
+        .student-item {
+            padding: 18px 10px; 
+            border-radius: 10px; 
+            cursor: pointer; 
+            text-align: center;
+            font-weight: bold; 
+            transition: all 0.3s ease; 
+            user-select: none;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        /* Trạng thái mặc định: KHÔNG ĂN (Màu đỏ nhạt) */
+        .student-item.not-eating {
+            background-color: #fcebeb; 
+            color: #cc0000; 
+            border: 2px solid #f0a3a3;
+        }
+
+        /* Trạng thái ĐÃ đăng ký: ĂN (Màu xanh lá nhạt, bật sáng) */
+        .student-item.eating {
+            background-color: #e6ffe6; 
+            color: #006400; 
+            border: 3px solid #00c800;
+            transform: scale(1.02); 
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.2);
+        }
+
+        /* ===================================================================
+         * 2. STYLES NÚT HÀNH ĐỘNG
+         * =================================================================== */
+        .action-container { display: flex; gap: 10px; }
+        .action-button {
+            padding: 18px; 
+            font-size: 18px; 
+            border: none; 
+            border-radius: 10px;
+            cursor: pointer; 
+            transition: background-color 0.3s; 
+            font-weight: bold;
+        }
+        #submit-btn { flex-grow: 3; background-color: #28a745; color: white; }
+        #submit-btn:hover:not(:disabled) { background-color: #218838; }
+        #submit-btn:disabled { background-color: #ccc; cursor: not-allowed; }
+
+        #edit-btn { flex-grow: 1; background-color: #ffc107; color: #333; display: none; }
+        #edit-btn:hover:not(:disabled) { background-color: #e0a800; }
+
+        #reset-btn { flex-grow: 1; background-color: #dc3545; color: white; }
+        #reset-btn:hover:not(:disabled) { background-color: #c82333; }
+        
+        /* ===================================================================
+         * 3. STYLES TRẠNG THÁI (MUA/KHÓA)
+         * =================================================================== */
+        .editing-mode .student-item { opacity: 1; pointer-events: auto; }
+        .locked-mode .student-item { opacity: 0.7; pointer-events: none; }
+        
+        /* Thông báo khóa hệ thống - CHỈ HIỆN KHI HẾT GIỜ */
+        .lock-message {
+            text-align: center; 
+            color: #dc3545; 
+            font-weight: bold; 
+            font-size: 1.4em; 
+            margin: 40px 0; 
+            padding: 25px; 
+            background-color: #f8d7da; 
+            border-radius: 12px;
+            border: 3px solid #dc3545;
+            box-shadow: 0 4px 12px rgba(220, 53, 69, 0.2);
+            display: none; 
+        }
+        
+        .lock-icon {
+            font-size: 4em;
+            color: #dc3545;
+            margin-bottom: 20px;
+        }
+        
+        /* ===================================================================
+         * 4. CUSTOM DIALOG STYLES (Chung cho Prompt, Alert, Confirm)
+         * =================================================================== */
+        #custom-dialog-overlay, #custom-alert-overlay, #custom-confirm-overlay {
+            display: none; 
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.7); 
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+            backdrop-filter: blur(3px); 
+        }
+
+        #custom-dialog-box, #custom-alert-box, #custom-confirm-box {
+            background: linear-gradient(135deg, #ffffff, #f0f0f5);
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            max-width: 400px;
+            width: 90%;
+            text-align: center;
+            animation: fadeIn 0.3s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: scale(0.9); }
+            to { opacity: 1; transform: scale(1); }
+        }
+
+        #dialog-title, #alert-title, #confirm-title {
+            color: #007bff;
+            font-size: 1.5em;
+            margin-bottom: 10px;
+        }
+
+        #dialog-message, #alert-message, #confirm-message {
+            color: #555;
+            margin-bottom: 20px;
+        }
+        
+        /* Nút chung */
+        .dialog-actions {
+            display: flex;
+            justify-content: space-around;
+            gap: 10px;
+        }
+        .dialog-button-style {
+            padding: 12px 25px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: background-color 0.3s, transform 0.1s;
+            flex-grow: 1;
+        }
+
+        /* Màu nút OK/Xác nhận (Chung cho Prompt, Alert và Confirm) */
+        #dialog-ok-btn, #confirm-ok-btn, #alert-ok-btn {
+            background-color: #007bff;
+            color: white;
+        }
+        #dialog-ok-btn:hover, #confirm-ok-btn:hover, #alert-ok-btn:hover {
+            background-color: #0056b3;
+            transform: translateY(-1px);
+        }
+
+        /* Màu nút Hủy (Chung cho Prompt và Confirm) */
+        #dialog-cancel-btn, #confirm-cancel-btn {
+            background-color: #e9ecef;
+            color: #333;
+        }
+        #dialog-cancel-btn:hover, #confirm-cancel-btn:hover {
+            background-color: #ced4da;
+            transform: translateY(-1px);
+        }
+
+        /* Style cho Input (chỉ dùng cho Prompt) */
+        #dialog-input {
+            width: calc(100% - 20px);
+            padding: 12px;
+            margin-bottom: 25px;
+            border: 2px solid #ccc;
+            border-radius: 8px;
+            box-sizing: border-box;
+            font-size: 1.1em;
+            transition: border-color 0.3s;
+        }
+
+        #dialog-input:focus {
+            border-color: #007bff;
+            outline: none;
+            box-shadow: 0 0 5px rgba(0, 123, 255, 0.5);
+        }
+    </style>
+</head>
+<body class="editing-mode">
+    <div class="container">
+        <h1>🍱 Đăng Ký Cơm Trưa - Lớp 3A1</h1>
+        
+        <div id="lock-message" class="lock-message">
+            <div class="lock-icon">⛔</div>
+            HỆ THỐNG ĐÃ TỰ ĐỘNG KHÓA ĐĂNG KÝ (Sau 7h30 hàng ngày)
+            <p style="color: #666; font-size: 0.8em; margin-top: 15px;">
+                ⏰ Thời gian đăng ký đã kết thúc. Vui lòng quay lại lúc 12h trưa hàng ngày.
+            </p>
+        </div>
+        
+        <div id="main-content">
+            <div class="summary">
+                Tổng số học sinh: <span id="total-students">...</span> |
+                Số lượng đăng ký ăn: <span id="eating-count" style="color: green;">0</span> |
+                Số lượng không ăn: <span id="not-eating-count" style="color: red;">...</span>
+            </div>
+            
+            <div class="student-list" id="student-list">
+            </div>
+            
+            <div class="action-container">
+                <button id="submit-btn" class="action-button">✅ GỬI LẦN ĐẦU / CẬP NHẬT (GVCN)</button>
+                <button id="reset-btn" class="action-button">🔄 ĐẶT LẠI</button>
+                <button id="edit-btn" class="action-button">✏️ SỬA ĐĂNG KÝ</button>
+            </div>
+        </div>
+    </div>
+    
+    <div id="custom-dialog-overlay">
+        <div id="custom-dialog-box">
+            <h3 id="dialog-title">🔑 SỬA ĐĂNG KÝ CƠM TRƯA</h3>
+            <p id="dialog-message">Vui lòng nhập mật khẩu Giáo viên chủ nhiệm để sửa đổi danh sách đăng ký.</p>
+            <input type="password" id="dialog-input" placeholder="Nhập mật khẩu tại đây..." />
+            <div id="dialog-actions" class="dialog-actions">
+                <button id="dialog-ok-btn" class="dialog-button-style">Xác nhận</button>
+                <button id="dialog-cancel-btn" class="dialog-button-style">Hủy bỏ</button>
+            </div>
+        </div>
+    </div>
+    
+    <div id="custom-alert-overlay" style="display: none;">
+        <div id="custom-alert-box">
+            <h3 id="alert-title">Thông Báo</h3>
+            <p id="alert-message"></p>
+            <button id="alert-ok-btn" class="dialog-button-style">Đã Hiểu</button>
+        </div>
+    </div>
+
+    <div id="custom-confirm-overlay" style="display: none;">
+        <div id="custom-confirm-box">
+            <h3 id="confirm-title">Xác Nhận Hành Động</h3>
+            <p id="confirm-message"></p>
+            <div id="confirm-actions" class="dialog-actions">
+                <button id="confirm-ok-btn" class="dialog-button-style">Xác Nhận</button>
+                <button id="confirm-cancel-btn" class="dialog-button-style">Hủy Bỏ</button>
+            </div>
+        </div>
+    </div>
+    <script>
+        // ===================================================================
+        // CẤU HÌNH 
+        // ===================================================================
+        const CLASS_NAME = "3A1";
+        const EDIT_PASSWORD = "giaphu2";
+        const TODAY_DATE_STRING = new Date().toLocaleDateString('vi-VN');
+
+        // Key Local Storage
+        const STORAGE_KEY_PREFIX = 'lop3A1_registration_data_'; 
+        const CURRENT_STORAGE_KEY = STORAGE_KEY_PREFIX + TODAY_DATE_STRING;
+
+        const LAST_SENT_KEY_PREFIX = 'lop3A1_last_sent_'; 
+        const CURRENT_LAST_SENT_KEY = LAST_SENT_KEY_PREFIX + TODAY_DATE_STRING;
+        
+        // Thời gian đăng ký: Từ 12h00 trưa hôm trước đến 7h30 sáng hôm sau
+        const UNLOCK_HOUR = 12; // Giờ mở: 12h00 trưa hôm trước
+        const UNLOCK_MINUTE = 0;
+        const LOCK_HOUR = 7;    // Giờ khóa: 7h30 sáng hôm nay
+        const LOCK_MINUTE = 30;
+
+        // URL của Google Apps Script Web App
+        const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbyDxgCYRXo4FQXOKd1Kb2f-TkOtujMsSRK-JODz1Ka7WwOzXQ0ca5tjKM0uu8wrgpxF/exec";
+        
+        // 1. DANH SÁCH HỌC SINH
+        const students = [
+    { id: 1, name: "Nguyễn Ngọc Hoài An" },
+    { id: 2, name: "Vũ Ngọc Minh An" },
+    { id: 3, name: "Trần Vũ Tú Anh" },
+    { id: 4, name: "Vũ Tú Anh" },
+    { id: 5, name: "Phạm Ngọc Ánh" },
+    { id: 6, name: "Nguyễn Quốc Bảo" },
+    { id: 7, name: "Vũ Thanh Bình" },
+    { id: 8, name: "Nguyễn Bảo Minh Châu" },
+    { id: 9, name: "Nguyễn Nhất Duy" },
+    { id: 10, name: "Hoàng Linh Đan" },
+    { id: 11, name: "Lê Ngọc Tâm Đan" },
+    { id: 12, name: "Nguyễn Thanh Hà" },
+    { id: 13, name: "Trần Tuệ Hân" },
+    { id: 14, name: "Vũ Huy Hoàng" },
+    { id: 15, name: "Ngô Văn Khải" },
+    { id: 16, name: "Hoàng Minh Khang" },
+    { id: 17, name: "Nguyễn Gia Khánh" },
+    { id: 18, name: "Trần Thùy Linh" },
+    { id: 19, name: "Nguyễn Hương Ly" },
+    { id: 20, name: "Lê Hải Mẫn" },
+    { id: 21, name: "Phạm Lục Thảo My" },
+    { id: 22, name: "Lưu Hoàng Nhật Nam" },
+    { id: 23, name: "Đỗ Minh Nhật" },
+    { id: 24, name: "Nguyễn An Nhiên" },
+    { id: 25, name: "Đào Nhã Phương" },
+    { id: 26, name: "Nguyễn Minh Phương" },
+    { id: 27, name: "Nguyễn Hoàng Đỗ Quyên" },
+    { id: 28, name: "Đinh Quốc Thái" },
+    { id: 29, name: "Nguyễn Minh Thanh" },
+    { id: 30, name: "Nguyễn Phương Thùy" },
+    { id: 31, name: "Đỗ Anh Thư" },
+    { id: 32, name: "Văn Anh Tuấn" },
+    { id: 33, name: "Đào Vũ Minh Tùng" },
+    { id: 34, name: "Đinh Khánh Vy" },
+    { id: 35, name: "Phạm Minh Khôi" },
+    { id: 36, name: "Nguyễn Ngọc Bảo Trâm" },
+    { id: 37, name: "Đỗ Hải Yến" }, // Đã thêm dấu phẩy
+    { id: 38, name: "Nguyễn Hoài An" }, // Đã thêm dấu phẩy
+    { id: 39, name: "Đỗ Phạm Bảo An" }
+];
+        
+        // 2. KHỞI TẠO CÁC BIẾN DOM VÀ DỮ LIỆU
+        const studentListDiv = document.getElementById('student-list');
+        const submitButton = document.getElementById('submit-btn');
+        const resetButton = document.getElementById('reset-btn'); 
+        const editButton = document.getElementById('edit-btn');
+        const eatingCountSpan = document.getElementById('eating-count');
+        const notEatingCountSpan = document.getElementById('not-eating-count');
+        const totalStudentsSpan = document.getElementById('total-students');
+        const body = document.body;
+        const lockMessage = document.getElementById('lock-message');
+        const mainContent = document.getElementById('main-content');
+        let registrationData = {};
+        
+        totalStudentsSpan.textContent = students.length;
+
+        // ===================================================================
+        // HÀM CHỨC NĂNG (CUSTOM DIALOGS)
+        // ===================================================================
+
+        // Hàm: Hiển thị hộp thoại Prompt tùy chỉnh (Thay thế prompt())
+        function showCustomPrompt() {
+            return new Promise(resolve => {
+                const overlay = document.getElementById('custom-dialog-overlay');
+                const input = document.getElementById('dialog-input');
+                const okBtn = document.getElementById('dialog-ok-btn');
+                const cancelBtn = document.getElementById('dialog-cancel-btn');
+                
+                overlay.style.display = 'flex';
+                input.value = ''; 
+                input.focus(); 
+
+                const closeDialog = (result) => {
+                    overlay.style.display = 'none';
+                    okBtn.onclick = null;
+                    cancelBtn.onclick = null;
+                    input.onkeyup = null;
+                    resolve(result);
+                };
+                
+                okBtn.onclick = () => closeDialog(input.value);
+                cancelBtn.onclick = () => closeDialog(null);
+
+                input.onkeyup = (event) => {
+                    if (event.key === 'Enter') {
+                        closeDialog(input.value);
+                    }
+                };
+            });
+        }
+        
+        // Hàm: Hiển thị hộp thoại Alert tùy chỉnh (Thay thế alert())
+        function showCustomAlert(message, title = "Thông Báo") {
+            return new Promise(resolve => {
+                const overlay = document.getElementById('custom-alert-overlay');
+                const titleEl = document.getElementById('alert-title');
+                const messageEl = document.getElementById('alert-message');
+                const okBtn = document.getElementById('alert-ok-btn');
+                
+                titleEl.textContent = title;
+                messageEl.textContent = message;
+                overlay.style.display = 'flex';
+
+                okBtn.onclick = () => {
+                    overlay.style.display = 'none';
+                    okBtn.onclick = null;
+                    resolve(true); 
+                };
+            });
+        }
+
+        // Hàm: Hiển thị hộp thoại Confirm tùy chỉnh (Thay thế confirm())
+        function showCustomConfirm(message, title = "Xác Nhận Hành Động") {
+            return new Promise(resolve => {
+                const overlay = document.getElementById('custom-confirm-overlay');
+                const titleEl = document.getElementById('confirm-title');
+                const messageEl = document.getElementById('confirm-message');
+                const okBtn = document.getElementById('confirm-ok-btn');
+                const cancelBtn = document.getElementById('confirm-cancel-btn');
+
+                titleEl.textContent = title;
+                messageEl.textContent = message;
+                overlay.style.display = 'flex';
+
+                const closeDialog = (result) => {
+                    overlay.style.display = 'none';
+                    okBtn.onclick = null;
+                    cancelBtn.onclick = null;
+                    resolve(result); 
+                };
+
+                okBtn.onclick = () => closeDialog(true);
+                cancelBtn.onclick = () => closeDialog(false);
+            });
+        }
+
+        // ===================================================================
+        // HÀM CHỨC NĂNG (LOGIC ỨNG DỤNG)
+        // ===================================================================
+
+        // Hàm 1: Kiểm tra xem đã qua giờ khóa chưa (hết hạn: 7h30) HOẶC chưa đến giờ mở (chưa bắt đầu: 12h trưa)
+        function isLockedByTime() {
+            const now = new Date();
+            const currentHour = now.getHours();
+            const currentMinute = now.getMinutes();
+            
+            // Đã qua 7h30 sáng
+            const isPastLockTime = (currentHour > LOCK_HOUR) || 
+                                   (currentHour === LOCK_HOUR && currentMinute >= LOCK_MINUTE);
+
+            // Chưa đến 12h00 trưa
+            const isTooEarly = (currentHour < UNLOCK_HOUR) || 
+                               (currentHour === UNLOCK_HOUR && currentMinute < UNLOCK_MINUTE);
+                               
+            // Hệ thống bị khóa nếu: ĐÃ QUA 7h30 VÀ CHƯA ĐẾN 12h00 TRƯA
+            return isPastLockTime && isTooEarly; 
+        }
+
+        // Hàm 2: Áp dụng khóa hoàn toàn - CHỈ KHI HẾT GIỜ
+        function applyFullLock() {
+            body.classList.remove('editing-mode');
+            body.classList.add('locked-mode');
+            
+            mainContent.style.display = 'none';
+            lockMessage.style.display = 'block';
+            
+            submitButton.disabled = true;
+            editButton.style.display = 'none';
+            resetButton.style.display = 'none';
+        }
+
+        // Hàm 3: Khởi tạo danh sách học sinh trên giao diện
+        function initializeStudents() {
+            if (isLockedByTime()) {
+                applyFullLock();
+                return;
+            }
+
+            // Tải trạng thái đăng ký đã lưu từ Local Storage
+            const savedDataJSON = localStorage.getItem(CURRENT_STORAGE_KEY);
+            let savedRegistrationData = {};
+            if (savedDataJSON) {
+                try {
+                    savedRegistrationData = JSON.parse(savedDataJSON);
+                } catch (e) {}
+            }
+
+            students.forEach(student => {
+                const item = document.createElement('div');
+                // Chuyển student.id thành string để so sánh
+                const isEating = savedRegistrationData[student.id] === true || savedRegistrationData[student.id.toString()] === true;
+                
+                item.className = 'student-item ' + (isEating ? 'eating' : 'not-eating');
+                item.textContent = student.name;
+                item.dataset.id = student.id;
+                item.onclick = toggleRegistration;
+                studentListDiv.appendChild(item);
+                
+                registrationData[student.id] = isEating;
+            });
+            updateSummary();
+            
+            // Kiểm tra trạng thái (đã gửi hay chưa)
+            checkSubmissionStatus();
+        }
+
+        // Hàm 4: Kiểm tra trạng thái đã gửi
+        function checkSubmissionStatus() {
+            const lastSent = localStorage.getItem(CURRENT_LAST_SENT_KEY);
+            if (lastSent) {
+                // ĐÃ GỬI: Khóa nhẹ, hiện nút SỬA
+                lockInterface(); 
+            } else {
+                // CHƯA GỬI: Mở hoàn toàn
+                unlockInterface();
+                submitButton.textContent = "✅ GỬI LẦN ĐẦU / CẬP NHẬT (GVCN)";
+            }
+        }
+        
+        // Hàm 5: Đổi trạng thái khi bấm vào tên
+        function toggleRegistration(event) {
+            if (body.classList.contains('locked-mode')) return;
+            
+            const item = event.target;
+            const studentId = parseInt(item.dataset.id);
+
+            const isEating = item.classList.toggle('eating');
+            item.classList.toggle('not-eating', !isEating);
+
+            registrationData[studentId] = isEating;
+            updateSummary();
+            
+            // Lưu ngay lập tức vào Local Storage khi thay đổi
+            localStorage.setItem(CURRENT_STORAGE_KEY, JSON.stringify(registrationData));
+        }
+
+        // Hàm 6: Cập nhật tóm tắt số lượng 
+        function updateSummary() {
+            const eatingCount = Object.values(registrationData).filter(status => status).length;
+            const notEatingCount = students.length - eatingCount;
+            
+            eatingCountSpan.textContent = eatingCount;
+            notEatingCountSpan.textContent = notEatingCount;
+        }
+
+        // Hàm 7: Khóa giao diện (sau khi gửi) - CHỈ KHÓA NHẸ
+        function lockInterface() {
+            body.classList.remove('editing-mode');
+            body.classList.add('locked-mode');
+            submitButton.disabled = true;
+            submitButton.textContent = "ĐÃ GỬI XONG - Bấm SỬA để thay đổi";
+            editButton.style.display = 'inline-block'; // HIỆN NÚT SỬA
+            resetButton.style.display = 'inline-block';
+        }
+
+        // Hàm 8: Mở khóa giao diện (cho phép SỬA)
+        function unlockInterface() {
+            body.classList.remove('locked-mode');
+            body.classList.add('editing-mode');
+            submitButton.disabled = false;
+            submitButton.textContent = "✅ GỬI LẦN ĐẦU / CẬP NHẬT (GVCN)";
+            editButton.style.display = 'none';
+            resetButton.style.display = 'inline-block';
+        }
+        
+        // Hàm 9: Đặt lại trạng thái (Sử dụng Custom Confirm/Alert)
+        async function resetRegistration() {
+            if (isLockedByTime()) {
+                await showCustomAlert(`❌ Đã hết thời gian đăng ký (sau ${LOCK_HOUR}h${LOCK_MINUTE}). Không thể ĐẶT LẠI.`, "Lỗi Thời Gian");
+                return;
+            }
+
+            const confirmed = await showCustomConfirm(
+                "Bạn có chắc chắn muốn ĐẶT LẠI toàn bộ danh sách đăng ký về trạng thái MẶC ĐỊNH (Tất cả KHÔNG ĂN) không? Thao tác này sẽ xóa dữ liệu đã lưu trữ.",
+                "Xác Nhận Đặt Lại"
+            );
+            if (!confirmed) return;
+            
+            localStorage.removeItem(CURRENT_STORAGE_KEY);
+            localStorage.removeItem(CURRENT_LAST_SENT_KEY);
+
+            students.forEach(student => {
+                registrationData[student.id] = false;
+            });
+
+            const studentItems = studentListDiv.querySelectorAll('.student-item');
+            studentItems.forEach(item => {
+                item.classList.remove('eating');
+                item.classList.add('not-eating');
+            });
+
+            updateSummary();
+            unlockInterface();
+            await showCustomAlert("✅ Đặt lại thành công. Vui lòng bấm GỬI để hoàn tất.", "Thành Công");
+        }
+
+        // Hàm 10: Xử lý nút GỬI (Sử dụng Custom Confirm/Alert)
+        submitButton.onclick = async () => {
+            if (isLockedByTime()) {
+                await showCustomAlert(`❌ Đã hết thời gian đăng ký (sau ${LOCK_HOUR}h${LOCK_MINUTE}). Không thể gửi.`, "Lỗi Thời Gian");
+                applyFullLock();
+                return;
+            }
+
+            const confirmed = await showCustomConfirm(
+                "Bạn có chắc chắn muốn GỬI/CẬP NHẬT dữ liệu đăng ký bữa trưa này không? Dữ liệu cũ (nếu có) sẽ bị ghi đè.",
+                "Xác Nhận Gửi Dữ Liệu"
+            );
+            if (!confirmed) return;
+
+            const eatingStudents = students
+                .filter(student => registrationData[student.id])
+                .map(student => student.name);
+            
+            const notEatingStudents = students
+                .filter(student => !registrationData[student.id])
+                .map(student => student.name);
+
+            const finalData = {
+                api_key: "123456789", 
+                class_name: CLASS_NAME, 
+                date: new Date().toLocaleDateString('vi-VN'),
+                eating_count: eatingStudents.length, 
+                not_eating_count: notEatingStudents.length, 
+                eating_list: eatingStudents,
+            };
+            
+            submitButton.disabled = true;
+            submitButton.textContent = "ĐANG GỬI DỮ LIỆU...";
+            
+            fetch(WEB_APP_URL, {
+                method: 'POST',
+                mode: 'no-cors',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(finalData)
+            })
+            .then(response => {
+                // Xử lý thành công
+                showCustomAlert(`✅ Đã gửi/cập nhật đăng ký thành công cho ${CLASS_NAME}.\nTổng số suất ăn: ${finalData.eating_count}.`, "Gửi Thành Công");
+                lockInterface(); 
+                localStorage.setItem(CURRENT_LAST_SENT_KEY, new Date().toISOString());
+            })
+            .catch(error => {
+                console.error('Lỗi khi gửi dữ liệu:', error);
+                showCustomAlert('❌ Lỗi xảy ra khi gửi đăng ký. Vui lòng kiểm tra kết nối và thử lại.', "Lỗi Kết Nối");
+                unlockInterface();
+            });
+        };
+
+        // ===================================================================
+        // GÁN SỰ KIỆN VÀ KHỞI TẠO
+        // ===================================================================
+
+        // Sự kiện cho nút RESET
+        resetButton.onclick = resetRegistration; 
+
+        // Sự kiện cho nút SỬA (Dùng Custom Prompt/Alert)
+        editButton.onclick = async () => {
+            if (isLockedByTime()) {
+                await showCustomAlert(`❌ Đã hết thời gian đăng ký (sau ${LOCK_HOUR}h${LOCK_MINUTE}). Không thể sửa đổi thêm.`, "Lỗi Thời Gian");
+                return; 
+            }
+
+            const passwordAttempt = await showCustomPrompt();
+            
+            if (passwordAttempt === EDIT_PASSWORD) {
+                unlockInterface(); 
+            } else if (passwordAttempt !== null) {
+                await showCustomAlert("❌ Mật khẩu không chính xác. Chỉ Giáo viên chủ nhiệm mới có quyền sửa đổi.", "Lỗi Truy Cập");
+            }
+        };
+
+        // Khởi tạo ứng dụng
+        initializeStudents();
+
+        // Kiểm tra lại mỗi phút để đảm bảo khóa đúng thời điểm 7h30 sáng
+        setInterval(() => {
+            if (isLockedByTime() && mainContent.style.display !== 'none') {
+                applyFullLock();
+            }
+        }, 60000); 
+
+    </script>
+</body>
+</html>
